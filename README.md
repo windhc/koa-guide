@@ -6,7 +6,8 @@ Koa，下一代 Node.js web 框架
 
 ### koa 简介
 
-由 Express 原班人马打造的 koa，致力于成为一个更小、更健壮、更富有表现力的 Web 框架。使用 koa 编写 web 应用，通过组合不同的 generator，可以免除重复繁琐的回调函数嵌套，并极大地提升常用错误处理效率。Koa 不在内核方法中绑定任何中间件，它仅仅提供了一个轻量优雅的函数库，使得编写 Web 应用变得得心应手。
+由 Express 原班人马打造的 koa，致力于成为一个更小、更健壮、更富有表现力的 Web 框架。使用 koa 编写 web 应用，通过组合不同的 generator，
+可以免除重复繁琐的回调函数嵌套，并极大地提升常用错误处理效率。Koa 不在内核方法中绑定任何中间件，它仅仅提供了一个轻量优雅的函数库，使得编写 Web 应用变得得心应手。
 
 ### 安装 koa
 
@@ -29,7 +30,8 @@ require('babel-core/register');
 const app = require('./app');
 ````
 
-你至少要使用[transform-async-to-generator](http://babeljs.io/docs/plugins/transform-async-to-generator/) or [transform-async-to-module-method](http://babeljs.io/docs/plugins/transform-async-to-module-method/)插件，
+你至少要使用[transform-async-to-generator](http://babeljs.io/docs/plugins/transform-async-to-generator/) 
+or [transform-async-to-module-method](http://babeljs.io/docs/plugins/transform-async-to-module-method/)插件，
 来解析和转译async functions。例如，你可以在你的`.babelrc`文件里这样写：
 ```json
 {
@@ -37,15 +39,19 @@ const app = require('./app');
 }
 ```
 
-你也可以在[env preset](http://babeljs.io/docs/plugins/preset-env/)里使用目标选项`"node": "current"`。
+你也可以在[env preset](http://babeljs.io/docs/plugins/preset-env/)里使用target选项`"node": "current"`。
 
 ---
 
 ### 应用（Application）
 
-一个 Koa Application（以下简称 app）由一系列 generator 中间件组成。按照编码顺序在栈内依次执行，从这个角度来看，Koa app 和其他中间件系统（比如 Ruby Rack 或者 Connect/Express ）没有什么太大差别，不过，从另一个层面来看，Koa 提供了一种基于底层中间件编写「语法糖」的设计思路，这让设计中间件变得更简单有趣。
+一个 Koa Application（以下简称 app）由一系列 generator 中间件组成。按照编码顺序在栈内依次执行，从这个角度来看，
+Koa app 和其他中间件系统（比如 Ruby Rack 或者 Connect/Express ）没有什么太大差别，不过，从另一个层面来看，
+Koa 提供了一种基于底层中间件编写「语法糖」的设计思路，这让设计中间件变得更简单有趣。
 
-在这些中间件中，有负责内容协商（content-negotation）、缓存控制（cache freshness）、反向代理（proxy support）与重定向等等功能的常用中间件（详见 [中间件](#%E4%B8%AD%E9%97%B4%E4%BB%B6middleware) 章节），但如前所述， Koa 内核并不会打包这些中间件，让我们先来看看 Koa 极其简单的 Hello World 应用程序：
+在这些中间件中，有负责内容协商（content-negotation）、缓存控制（cache freshness）、反向代理（proxy support）与重定向
+等等功能的常用中间件（详见 [中间件](#%E4%B8%AD%E9%97%B4%E4%BB%B6middleware) 章节），但如前所述， Koa 内核并不会打包这些中间件，
+让我们先来看看 Koa 极其简单的 Hello World 应用程序：
 
 ````javascript
 var koa = require('koa');
@@ -71,7 +77,9 @@ app.use(ctx => {
 app.listen(3000);
 ````
 
-**译者注：** 与普通的 function 不同，generator functions 以 `function*` 声明，以这种关键词声明的函数支持 `yield`。generator function是ECMAScript 6定义的新的语法，想了解其基本用法，以及Koa如何利用generator function达到在保持js代码异步特性的同时无需编写大量回调函数，可以参考[这篇文章](http://blog.stevensanderson.com/2013/12/21/experiments-with-koa-and-javascript-generators/)。
+**译者注：** 与普通的 function 不同，generator functions 以 `function*` 声明，以这种关键词声明的函数支持 `yield`。
+generator function是ECMAScript 6定义的新的语法，想了解其基本用法，以及Koa如何利用generator function达到在保持js代码异步特性的同时无需编写大量回调函数，
+可以参考[这篇文章](http://blog.stevensanderson.com/2013/12/21/experiments-with-koa-and-javascript-generators/)。
 
 ---
 
@@ -79,9 +87,12 @@ app.listen(3000);
 
 Koa 中间件以一种非常传统的方式级联起来，你可能会非常熟悉这种写法。
 
-在以往的 Node 开发中，频繁使用回调不太便于展示复杂的代码逻辑，在 Koa 中，我们可以写出真正具有表现力的中间件。与 Connect 实现中间件的方法相对比，Koa 的做法不是简单的将控制权依次移交给一个又一个的中间件直到程序结束，Koa 执行代码的方式有点像回形针，用户请求通过中间件，遇到 `yield next` 关键字时，会被传递到下一个符合请求的路由（downstream），在 `yield next` 捕获不到下一个中间件时，逆序返回继续执行代码（upstream）。
+在以往的 Node 开发中，频繁使用回调不太便于展示复杂的代码逻辑，在 Koa 中，我们可以写出真正具有表现力的中间件。与 Connect 实现中间件的方法相对比，
+Koa 的做法不是简单的将控制权依次移交给一个又一个的中间件直到程序结束，Koa 执行代码的方式有点像回形针，用户请求通过中间件，遇到 `yield next` 关键字时，
+会被传递到下一个符合请求的路由（downstream），在 `yield next` 捕获不到下一个中间件时，逆序返回继续执行代码（upstream）。
 
-下边这个例子展现了使用这一特殊方法书写的 Hello World 范例：一开始，用户的请求通过 x-response-time 中间件和 logging 中间件，这两个中间件记录了一些请求细节，然后「穿过」 response 中间件一次，最终结束请求，返回 「Hello World」。
+下边这个例子展现了使用这一特殊方法书写的 Hello World 范例：一开始，用户的请求通过 x-response-time 中间件和 logging 中间件，
+这两个中间件记录了一些请求细节，然后「穿过」 response 中间件一次，最终结束请求，返回 「Hello World」。
 
 当程序运行到 `yield next` 时，代码流会暂停执行这个中间件的剩余代码，转而切换到下一个被定义的中间件执行代码，这样切换控制权的方式，被称为
 downstream，当没有下一个中间件执行 downstream 的时候，代码将会逆序执行。
@@ -254,7 +265,8 @@ app.on('error', function(err, ctx){
 
 ### 应用上下文（Context）
 
-Koa 的上下文封装了 request 与 response 对象至一个对象中，并提供了一些帮助开发者编写业务逻辑的方法。为了方便，你可以在 `ctx.request` 和 `ctx.response` 中访问到这些方法。
+Koa 的上下文封装了 request 与 response 对象至一个对象中，并提供了一些帮助开发者编写业务逻辑的方法。为了方便，你可以在 `ctx.request` 
+和 `ctx.response` 中访问到这些方法。
 
 每一个请求都会创建一段上下文。在控制业务逻辑的中间件中，上下文被寄存在 `this` 对象中：
 
@@ -265,7 +277,8 @@ app.use(function *(){
   this.response; // Response 对象
 });
 ````
-为了使用方便，许多上下文属性和方法都被委托代理到他们的 `ctx.request` 或 `ctx.response`，比如访问 `ctx.type` 和 `ctx.length` 将被代理到 `response` 对象，`ctx.path` 和 `ctx.method` 将被代理到 `request` 对象。
+为了使用方便，许多上下文属性和方法都被委托代理到他们的 `ctx.request` 或 `ctx.response`，比如访问 `ctx.type` 和 `ctx.length` 
+将被代理到 `response` 对象，`ctx.path` 和 `ctx.method` 将被代理到 `request` 对象。
 
 #### Request 对象
 
@@ -360,7 +373,8 @@ throw err;
 
 需要注意的是，`ctx.throw` 创建的错误，均为用户级别错误（标记为err.expose），会被返回到客户端。
 
-- ctx.assert(value, [msg], [status], [properties]) 用来断言的辅助方法，类似 Node 中的 `assert()` 方法。`this.assert(this.user, 401, 'User not found. Please login!');` 此方法由 `http-assert` 模块支持。
+- ctx.assert(value, [msg], [status], [properties]) 用来断言的辅助方法，类似 Node 中的 `assert()` 方法。
+`this.assert(this.user, 401, 'User not found. Please login!');` 此方法由 `http-assert` 模块支持。
 
 ---
 
@@ -491,7 +505,8 @@ this.body = yield db.find('something');
 
 #### req.subdomains
 
-返回请求对象中的子域名数组。子域名数组会自动由请求域名字符串中的 `.` 分割开，在没有设置自定义的 `app.subdomainOffset` 参数时，默认返回根域名之前的所有子域名数组。
+返回请求对象中的子域名数组。子域名数组会自动由请求域名字符串中的 `.` 分割开，在没有设置自定义的 `app.subdomainOffset` 参数时，
+默认返回根域名之前的所有子域名数组。
 
 例如，当请求域名为 `"tobi.ferrets.example.com"` 时候，返回 `["ferrets", "tobi"]`，数组顺序是子代域名在前，孙代域名在后。
 
@@ -499,7 +514,8 @@ this.body = yield db.find('something');
 
 #### req.is(type)
 
-判断请求对象中 `Content-Type` 是否为给定 type 的快捷方法，如果不存在 `request.body`，将返回 `undefined`，如果没有符合的类型，返回 `false`，除此之外，返回匹配的类型字符串。
+判断请求对象中 `Content-Type` 是否为给定 type 的快捷方法，如果不存在 `request.body`，将返回 `undefined`，如果没有符合的类型，
+返回 `false`，除此之外，返回匹配的类型字符串。
 
 ````javascript
 // 客户端 Content-Type: text/html; charset=utf-8
@@ -747,7 +763,8 @@ this.type = '.png';
 this.type = 'png';
 ````
 
-注意：当使用文件后缀指定时，koa 会默认设置好最匹配的编码字符集，比如当设定 `res.type = 'html'` 时，koa 会默认使用 `"utf-8"` 字符集。但当明确使用 `res.type = 'text/html'` 指定时，koa 不会自动设定字符集。
+注意：当使用文件后缀指定时，koa 会默认设置好最匹配的编码字符集，比如当设定 `res.type = 'html'` 时，koa 会默认使用 `"utf-8"` 字符集。
+但当明确使用 `res.type = 'text/html'` 指定时，koa 不会自动设定字符集。
 
 #### res.redirect(url, [alt])
 
