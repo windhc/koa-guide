@@ -227,8 +227,33 @@ app.keys = new KeyGrip(['im a newer secret', 'i like turtle'], 'sha256');
 注意，签名密钥只在配置项 `signed` 参数为真时才会生效：
 
 ````javascript
-this.cookies.set('name', 'tobi', { signed: true });
+ctx.cookies.set('name', 'tobi', { signed: true });
 ````
+
+#### app.context
+
+app.context is the prototype from which ctx is created from. You may add additional properties to ctx by editing app.context. 
+This is useful for adding properties or methods to ctx to be used across your entire app, which may be more performant (no middleware) 
+and/or easier (fewer require()s) at the expense of relying more on ctx, which could be considered an anti-pattern.
+
+For example, to add a reference to your database from ctx:
+
+```javascript
+app.context.db = db();
+
+app.use(async (ctx) => {
+  console.log(ctx.db);
+});
+```
+
+###### Note:
+
+- Many properties on ctx are defined using getters, setters, and Object.defineProperty(). 
+You can only edit these properties (not recommended) by using Object.defineProperty() on app.context. 
+See https://github.com/koajs/koa/issues/652.
+
+- Mounted apps currently use its parent's ctx and settings. Thus, mounted apps are really just groups of middleware.
+
 
 ### 错误处理（Error Handling）
 
