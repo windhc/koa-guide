@@ -47,28 +47,15 @@ or [transform-async-to-module-method](http://babeljs.io/docs/plugins/transform-a
 
 一个 Koa Application（以下简称 app）由一系列 generator 中间件组成。按照编码顺序在栈内依次执行，从这个角度来看，
 Koa app 和其他中间件系统（比如 Ruby Rack 或者 Connect/Express ）没有什么太大差别，不过，从另一个层面来看，
-Koa 提供了一种基于底层中间件编写「语法糖」的设计思路，这让设计中间件变得更简单有趣。
+Koa 提供了一种基于底层中间件编写「语法糖」的设计思路，这提高了互操作性，鲁棒性，并使书写中间件更加简单有趣。
 
 在这些中间件中，有负责内容协商（content-negotation）、缓存控制（cache freshness）、反向代理（proxy support）与重定向
 等等功能的常用中间件（详见 [中间件](#%E4%B8%AD%E9%97%B4%E4%BB%B6middleware) 章节），但如前所述， Koa 内核并不会打包这些中间件，
 让我们先来看看 Koa 极其简单的 Hello World 应用程序：
 
 ````javascript
-var koa = require('koa');
-var app = koa();
-
-app.use(function *(){
-  this.body = 'Hello World';
-});
-
-app.listen(3000);
-````
-
-如果使用Koa 2的话：
-
-````javascript
-var Koa = require('koa');
-var app = new Koa();
+const Koa = require('koa');
+const app = new Koa();
 
 app.use(ctx => {
   ctx.body = 'Hello World';
@@ -77,10 +64,6 @@ app.use(ctx => {
 app.listen(3000);
 ````
 
-**译者注：** 与普通的 function 不同，generator functions 以 `function*` 声明，以这种关键词声明的函数支持 `yield`。
-generator function是ECMAScript 6定义的新的语法，想了解其基本用法，以及Koa如何利用generator function达到在保持js代码异步特性的同时无需编写大量回调函数，
-可以参考[这篇文章](http://blog.stevensanderson.com/2013/12/21/experiments-with-koa-and-javascript-generators/)。
-
 ---
 
 ### 级联代码（Cascading）
@@ -88,44 +71,47 @@ generator function是ECMAScript 6定义的新的语法，想了解其基本用�
 Koa 中间件以一种非常传统的方式级联起来，你可能会非常熟悉这种写法。
 
 在以往的 Node 开发中，频繁使用回调不太便于展示复杂的代码逻辑，在 Koa 中，我们可以写出真正具有表现力的中间件。与 Connect 实现中间件的方法相对比，
-Koa 的做法不是简单的将控制权依次移交给一个又一个的中间件直到程序结束，Koa 执行代码的方式有点像回形针，用户请求通过中间件，遇到 `yield next` 关键字时，
-会被传递到下一个符合请求的路由（downstream），在 `yield next` 捕获不到下一个中间件时，逆序返回继续执行代码（upstream）。
+Koa 的做法不是简单的将控制权依次移交给一个又一个的中间件直到程序结束，Koa 执行代码的方式有点像回形针，用户请求通过中间件，遇到 `await next()` 关键字时，
+会被传递到下一个符合请求的路由（downstream），在 `await next()` 捕获不到下一个中间件时，逆序返回继续执行代码（upstream）。
 
 下边这个例子展现了使用这一特殊方法书写的 Hello World 范例：一开始，用户的请求通过 x-response-time 中间件和 logging 中间件，
 这两个中间件记录了一些请求细节，然后「穿过」 response 中间件一次，最终结束请求，返回 「Hello World」。
 
-当程序运行到 `yield next` 时，代码流会暂停执行这个中间件的剩余代码，转而切换到下一个被定义的中间件执行代码，这样切换控制权的方式，被称为
-downstream，当没有下一个中间件执行 downstream 的时候，代码将会逆序执行。
+当程序运行到 `next()` 时，代码流会暂停执行这个中间件的剩余代码，转而切换到下一个被定义的中间件执行代码，这样切换控制权的方式，被称为
+downstream，当没有下一个中间件执行 downstream 的时候，代码将会逆序执行（upstream 行为）。
 
 ````javascript
-var koa = require('koa');
-var app = koa();
+const Koa = require('koa');
+const app = new Koa();
 
 // x-response-time
-app.use(function *(next){
-  // (1) 进入路由
-  var start = new Date;
-  yield next;
-  // (5) 再次进入 x-response-time 中间件，记录2次通过此中间件「穿越」的时间
-  var ms = new Date - start;
-  this.set('X-Response-Time', ms + 'ms');
-  // (6) 返回 this.body
+
+app.use(async function (ctx, next) {
+    // (1) 进入路由
+    const start = new Date();
+    await next();
+    // (5) 再次进入 x-response-time 中间件，记录2次通过此中间件「穿越」的时间
+    const ms = new Date() - start;
+    console.log(`${ctx.method} ${ctx.url} - ${ms}`);
+    // (6) 返回 this.body
 });
 
 // logger
-app.use(function *(next){
-  // (2) 进入 logger 中间件
-  var start = new Date;
-  yield next;
-  // (4) 再次进入 logger 中间件，记录2次通过此中间件「穿越」的时间
-  var ms = new Date - start;
-  console.log('%s %s - %s', this.method, this.url, ms);
+
+app.use(async function (ctx, next) {
+    // (2) 进入 logger 中间件
+    const start = new Date();
+    await next();
+    // (4) 再次进入 logger 中间件，记录2次通过此中间件「穿越」的时间
+    const ms = new Date() - start;
+    console.log(`${ctx.method} ${ctx.url} - ${ms}`);
 });
 
 // response
-app.use(function *(){
-  // (3) 进入 response 中间件，没有捕获到下一个符合条件的中间件，传递到 upstream
-  this.body = 'Hello World';
+
+app.use(ctx => {
+    // (3) 进入 response 中间件，没有捕获到下一个符合条件的中间件，传递到 upstream
+    ctx.body = 'Hello World';
 });
 
 app.listen(3000);
@@ -190,20 +176,23 @@ app.listen(3000);
 
 #### app.listen(...)
 
-用于启动一个服务的快捷方法，以下范例代码在 3000 端口启动了一个空服务：
+Koa应用程序不是HTTP server的1对1表示形式。可以将一个或多个Koa应用程序安装在一起以形成具有单个HTTP server的较大应用程序。
+创建并返回HTTP server，将给定的参数传递给`Server#listen()`。这些参数在[nodejs.org](http://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+上有说明，以下范例代码在 3000 端口启动了一个空服务：
 
 ````javascript
-var koa = require('koa');
-var app = koa();
+const Koa = require('koa');
+const app = new Koa();
 
 app.listen(3000);
 ````
-app.listen 是 http.createServer 的简单包装，它实际上这样运行：
+
+app.listen(...) 是 http.createServer 的简单包装，它实际上这样运行：
 
 ````javascript
-var http = require('http');
-var koa = require('koa');
-var app = koa();
+const http = require('http');
+const Koa = require('koa');
+const app = new Koa();
 
 http.createServer(app.callback()).listen(3000);
 ````
@@ -211,9 +200,9 @@ http.createServer(app.callback()).listen(3000);
 如果有需要，你可以在多个端口上启动一个 app，比如同时支持 HTTP 和 HTTPS：
 
 ````javascript
-var http = require('http');
-var koa = require('koa');
-var app = koa();
+const http = require('http');
+const Koa = require('koa');
+const app = new Koa();
 
 http.createServer(app.callback()).listen(3000);
 http.createServer(app.callback()).listen(3001);
@@ -221,7 +210,7 @@ http.createServer(app.callback()).listen(3001);
 
 #### app.callback()
 
-返回一个可被 `http.createServer()` 接受的程序实例，也可以将这个返回函数挂载在一个 Connect/Express 应用中。
+返回一个可被 `http.createServer()` 接受的回调函数来处理请求，也可以使用此回调函数将koa app挂载在Connect/Express app中。
 
 #### app.use(function)
 
